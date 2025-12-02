@@ -18,20 +18,20 @@ export class OpenTelemetryMetrics implements INodeType {
     icon: 'fa:chart-line',
     group: ['transform'],
     version: 1,
-    description: 'ส่ง metrics ไปยัง OTLP endpoint ผ่าน OpenTelemetry',
+        description: 'Send metrics to an OTLP endpoint via OpenTelemetry',
     defaults: {
       name: 'OpenTelemetry Metrics',
     },
     inputs: ['main'],
     outputs: ['main'],
     properties: [
-      {
-        displayName: 'OTLP Metrics Endpoint',
-        name: 'host',
-        type: 'string',
-        default: 'http://localhost:4318/v1/metrics',
-        description: 'เช่น http://otel-collector:4318/v1/metrics',
-      },
+          {
+            displayName: 'OTLP Metrics Endpoint',
+            name: 'host',
+            type: 'string',
+            default: 'http://localhost:4318/v1/metrics',
+            description: 'e.g., http://otel-collector:4318/v1/metrics',
+          },
       {
         displayName: 'Service Name',
         name: 'serviceName',
@@ -125,43 +125,43 @@ export class OpenTelemetryMetrics implements INodeType {
           },
         ],
       },
-      {
-        displayName: 'Headers',
-        name: 'headers',
-        type: 'fixedCollection',
-        typeOptions: {
-          multipleValues: true,
-        },
-        default: {},
-        options: [
           {
-            name: 'headers',
             displayName: 'Headers',
-            values: [
+            name: 'headers',
+            type: 'fixedCollection',
+            typeOptions: {
+              multipleValues: true,
+            },
+            default: {},
+            options: [
               {
-                displayName: 'Key',
-                name: 'key',
-                type: 'string',
-                default: '',
-              },
-              {
-                displayName: 'Value',
-                name: 'value',
-                type: 'string',
-                default: '',
+                name: 'headers',
+                displayName: 'Headers',
+                values: [
+                  {
+                    displayName: 'Key',
+                    name: 'key',
+                    type: 'string',
+                    default: '',
+                  },
+                  {
+                    displayName: 'Value',
+                    name: 'value',
+                    type: 'string',
+                    default: '',
+                  },
+                ],
               },
             ],
+            description: 'HTTP headers for OTLP Exporter (e.g., Authorization)',
           },
-        ],
-        description: 'HTTP headers สำหรับ OTLP Exporter เช่น Authorization',
-      },
-      {
-        displayName: 'Export Interval (ms)',
-        name: 'exportIntervalMillis',
-        type: 'number',
-        default: 1000,
-        description: 'ช่วงเวลาส่ง metrics (ใช้กับตัวอ่านแบบ periodic)',
-      },
+          {
+            displayName: 'Export Interval (ms)',
+            name: 'exportIntervalMillis',
+            type: 'number',
+            default: 1000,
+            description: 'Interval for exporting metrics (used by periodic reader)',
+          },
     ] as INodeProperties[],
   };
 
@@ -235,8 +235,8 @@ export class OpenTelemetryMetrics implements INodeType {
             histogram.record(value, attrs);
             break;
           }
-          default:
-            throw new NodeOperationError(this.getNode(), `ไม่รองรับ Instrument Type: ${instrumentType}`);
+              default:
+                throw new NodeOperationError(this.getNode(), `Unsupported instrument type: ${instrumentType}`);
         }
 
         await (reader as any).forceFlush?.();
