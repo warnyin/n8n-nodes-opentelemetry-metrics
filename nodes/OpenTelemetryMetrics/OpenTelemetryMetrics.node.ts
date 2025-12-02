@@ -170,7 +170,11 @@ export class OpenTelemetryMetrics implements INodeType {
     const returnData: INodeExecutionData[] = [];
 
     for (let i = 0; i < items.length; i++) {
-      const host = this.getNodeParameter('host', i) as string;
+          const hostRaw = this.getNodeParameter('host', i) as string;
+          let host = String(hostRaw).trim().replace(/^`+|`+$/g, '');
+          if (!/\/v1\/metrics$/.test(host)) {
+            host = host.replace(/\/$/, '') + '/v1/metrics';
+          }
       const serviceName = this.getNodeParameter('serviceName', i) as string;
       const meterName = this.getNodeParameter('meterName', i) as string;
       const instrumentType = this.getNodeParameter('instrumentType', i) as string;
@@ -209,7 +213,7 @@ export class OpenTelemetryMetrics implements INodeType {
       const resource = new Resource({ 'service.name': serviceName, ...resAttrs });
 
       try {
-        const exporter = new OTLPMetricExporter({ url: host, headers });
+            const exporter = new OTLPMetricExporter({ url: host, headers, timeoutMillis: 10000 });
         const provider = new MeterProvider({ resource });
         const reader: MetricReader = new (require('@opentelemetry/sdk-metrics').PeriodicExportingMetricReader)({
           exporter,
@@ -239,22 +243,23 @@ export class OpenTelemetryMetrics implements INodeType {
                 throw new NodeOperationError(this.getNode(), `Unsupported instrument type: ${instrumentType}`);
         }
 
-        await (reader as any).forceFlush?.();
-        await provider.shutdown();
+            await (provider as any).forceFlush?.();
+            await provider.shutdown();
 
         returnData.push({
           json: {
             status: 'ok',
-            endpoint: host,
-            serviceName,
-            meterName,
-            instrumentType,
-            instrumentName,
-            value,
-            attributes: attrs,
-            resourceAttributes: resAttrs,
-          },
-        });
+                endpoint: host,
+                serviceName,
+                meterName,
+                instrumentType,
+                instrumentName,
+                value,
+                attributes: attrs,
+                resourceAttributes: resAttrs,
+                flushed: true,
+              },
+            });
       } catch (err) {
         throw new NodeOperationError(this.getNode(), (err as Error).message);
       }
