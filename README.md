@@ -1,34 +1,62 @@
 ![OpenTelemetry Metrics for n8n](https://raw.githubusercontent.com/warnyin/n8n-nodes-opentelemetry-metrics/main/assets/banner.svg)
 
-# n8n-nodes-opentelemetry-metrics
+# OpenTelemetry Metrics for n8n
 
-ส่ง metrics จาก n8n ไปยัง OTLP endpoint ผ่าน OpenTelemetry.
+Send metrics from n8n to an OTLP endpoint using OpenTelemetry. Supports Counter, UpDownCounter, and Histogram instruments with resource and metric attributes.
 
-## การติดตั้ง
+## Badges
+
+![npm version](https://img.shields.io/npm/v/%40warnyin%2Fn8n-nodes-opentelemetry-metrics)
+![license](https://img.shields.io/npm/l/%40warnyin%2Fn8n-nodes-opentelemetry-metrics)
+![GitHub stars](https://img.shields.io/github/stars/warnyin/n8n-nodes-opentelemetry-metrics)
+
+## Install
 
 ```bash
 npm install @warnyin/n8n-nodes-opentelemetry-metrics
 ```
 
-จากนั้นรีสตาร์ท n8n และเปิดใช้งาน Community Nodes เพื่อเพิ่ม node นี้ใน workflow ได้ทันที
+Restart n8n and enable Community Nodes. The node will be available to add in your workflow.
 
-## การใช้งาน
+## Usage
 
-- ตั้งค่า `OTLP Metrics Endpoint` เช่น `http://collector:4318/v1/metrics`
-- ตั้งค่า `Service Name` เพื่อเป็น resource attribute `service.name`
-- เลือก `Instrument Type` (Counter, UpDownCounter, Histogram)
-- ตั้งชื่อ `Instrument Name` และค่า `Value`
-- ใส่ `Attributes` (key/value) เพิ่มเติมสำหรับ metrics
-- ใส่ `Headers` (เช่น Authorization) สำหรับ OTLP HTTP Exporter
-- ปรับ `Export Interval (ms)` หากต้องการ
+- Set `OTLP Metrics Endpoint`, e.g. `http://collector:4318/v1/metrics`
+- Set `Service Name` (used as resource attribute `service.name`)
+- Choose `Instrument Type` (Counter, UpDownCounter, Histogram)
+- Provide `Instrument Name` and metric `Value`
+- Add metric `Attributes` (key/value)
+- Add `Headers` for the OTLP HTTP exporter (e.g., `Authorization`)
+- Optionally adjust `Export Interval (ms)`
 
-## ตัวอย่างการส่ง Counter
+## Example
 
 - Instrument Type: Counter
 - Instrument Name: `event_count`
 - Value: `1`
 - Attributes: `{ source: "n8n", workflow: "my-flow" }`
 
+## Configuration Options
+
+- `host`: OTLP HTTP endpoint (default: `http://localhost:4318/v1/metrics`)
+- `serviceName`: Resource attribute `service.name`
+- `resourceAttributes`: Additional resource attributes
+- `meterName`: Meter name (default: `n8n`)
+- `instrumentType`: `counter | upDownCounter | histogram`
+- `instrumentName`: Metric instrument name
+- `value`: Numeric value to add/record
+- `attributes`: Key/value metric attributes
+- `headers`: HTTP headers for OTLP exporter (e.g., `Authorization: Bearer ...`)
+- `exportIntervalMillis`: Periodic export interval in milliseconds
+
+## Development
+
+- Build: `npm run build`
+- Local package tarball: `npm pack`
+
+## Contributing
+
+PRs and issues are welcome. Please open an issue for bugs or feature requests.
+
 ## License
 
-MIT
+MIT License. See `LICENSE` file for details.
