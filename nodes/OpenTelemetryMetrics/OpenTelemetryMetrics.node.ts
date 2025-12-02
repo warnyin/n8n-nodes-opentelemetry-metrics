@@ -15,7 +15,7 @@ export class OpenTelemetryMetrics implements INodeType {
   description: INodeTypeDescription = {
     displayName: 'OpenTelemetry Metrics',
     name: 'openTelemetryMetrics',
-    icon: 'fa:chart-line',
+        icon: 'file:opentelemetry.svg',
     group: ['transform'],
     version: 1,
         description: 'Send metrics to an OTLP endpoint via OpenTelemetry',

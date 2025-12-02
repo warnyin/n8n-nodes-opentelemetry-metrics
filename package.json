@@ -1,6 +1,6 @@
 {
   "name": "@warnyin/n8n-nodes-opentelemetry-metrics",
-  "version": "0.1.1",
+  "version": "0.1.3",
   "description": "n8n community node for sending metrics via OpenTelemetry (OTLP)",
   "keywords": [
     "n8n-community-node-package",
@@ -10,7 +10,7 @@
   ],
   "license": "MIT",
   "author": {
-    "name": "n8n OpenTelemetry Metrics"
+    "name": "warnyin"
   },
   "repository": {
     "type": "git",
@@ -23,6 +23,7 @@
   ],
   "scripts": {
     "build": "tsc",
+    "postbuild": "node scripts/copy-assets.js",
     "dev": "tsc --watch"
   },
   "publishConfig": {
