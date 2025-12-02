@@ -1,6 +1,6 @@
 {
-  "name": "n8n-nodes-opentelemetry-metrics",
-  "version": "0.1.0",
+  "name": "@warnyin/n8n-nodes-opentelemetry-metrics",
+  "version": "0.1.1",
   "description": "n8n community node for sending metrics via OpenTelemetry (OTLP)",
   "keywords": [
     "n8n-community-node-package",
@@ -14,7 +14,7 @@
   },
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "git+https://github.com/warnyin/n8n-nodes-opentelemetry-metrics.git"
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -25,6 +25,9 @@
     "build": "tsc",
     "dev": "tsc --watch"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "n8n": {
     "n8nNodesApiVersion": 1,
     "nodes": [
@@ -33,14 +36,14 @@
   },
   "dependencies": {
     "@opentelemetry/api": "^1.8.0",
-    "@opentelemetry/sdk-metrics": "^1.8.0",
     "@opentelemetry/exporter-metrics-otlp-http": "^0.50.0",
-    "@opentelemetry/resources": "^1.8.0"
+    "@opentelemetry/resources": "^1.8.0",
+    "@opentelemetry/sdk-metrics": "^1.8.0",
+    "n8n-nodes-opentelemetry-metrics": "^0.1.0"
   },
   "devDependencies": {
-    "typescript": "^5.6.3",
     "n8n-core": "*",
-    "n8n-workflow": "*"
+    "n8n-workflow": "*",
+    "typescript": "^5.6.3"
   }
 }
-

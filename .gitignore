@@ -2,6 +2,10 @@
 node_modules/
 dist/
 
+# npm
+.npmrc
+*.tgz
+
 # Logs
 npm-debug.log*
 yarn-debug.log*
