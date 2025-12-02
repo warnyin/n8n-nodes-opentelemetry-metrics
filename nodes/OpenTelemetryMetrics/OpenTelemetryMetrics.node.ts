@@ -24,7 +24,7 @@ export class OpenTelemetryMetrics implements INodeType {
     },
     inputs: ['main'],
     outputs: ['main'],
-    properties: [
+        properties: [
           {
             displayName: 'OTLP Metrics Endpoint',
             name: 'host',
@@ -162,12 +162,19 @@ export class OpenTelemetryMetrics implements INodeType {
             default: 1000,
             description: 'Interval for exporting metrics (used by periodic reader)',
           },
-    ] as INodeProperties[],
-  };
+          {
+            displayName: 'Include Delivery Logs',
+            name: 'includeLogs',
+            type: 'boolean',
+            default: true,
+            description: 'Attach delivery logs to the execution output (redacts sensitive headers)',
+          },
+        ] as INodeProperties[],
+      };
 
-  async execute(this: any): Promise<INodeExecutionData[][]> {
-    const items = this.getInputData();
-    const returnData: INodeExecutionData[] = [];
+      async execute(this: any): Promise<INodeExecutionData[][]> {
+        const items = this.getInputData();
+        const returnData: INodeExecutionData[] = [];
 
     for (let i = 0; i < items.length; i++) {
           const hostRaw = this.getNodeParameter('host', i) as string;
@@ -184,7 +191,8 @@ export class OpenTelemetryMetrics implements INodeType {
       const attrsCollection = this.getNodeParameter('attributes', i) as IDataObject;
       const resAttrsCollection = this.getNodeParameter('resourceAttributes', i) as IDataObject;
       const headersCollection = this.getNodeParameter('headers', i) as IDataObject;
-      const exportIntervalMillis = this.getNodeParameter('exportIntervalMillis', i) as number;
+          const exportIntervalMillis = this.getNodeParameter('exportIntervalMillis', i) as number;
+          const includeLogs = this.getNodeParameter('includeLogs', i) as boolean;
 
       const attrs = Object.create(null) as Record<string, string>;
       const resAttrs = Object.create(null) as Record<string, string>;
@@ -212,14 +220,29 @@ export class OpenTelemetryMetrics implements INodeType {
 
       const resource = new Resource({ 'service.name': serviceName, ...resAttrs });
 
-      try {
-            const exporter = new OTLPMetricExporter({ url: host, headers, timeoutMillis: 10000 });
-        const provider = new MeterProvider({ resource });
-        const reader: MetricReader = new (require('@opentelemetry/sdk-metrics').PeriodicExportingMetricReader)({
-          exporter,
-          exportIntervalMillis,
-        });
-        provider.addMetricReader(reader);
+          try {
+            class LoggingOTLPMetricExporter extends OTLPMetricExporter {
+              public lastResult: { code?: number; error?: string; durationMs?: number } | undefined;
+              export(metrics: any, resultCallback: (result: any) => void) {
+                const start = Date.now();
+                super.export(metrics, (result: any) => {
+                  this.lastResult = {
+                    code: result?.code,
+                    error: result?.error?.message,
+                    durationMs: Date.now() - start,
+                  };
+                  resultCallback(result);
+                });
+              }
+            }
+
+            const exporter = new LoggingOTLPMetricExporter({ url: host, headers, timeoutMillis: 10000 });
+            const provider = new MeterProvider({ resource });
+            const reader: MetricReader = new (require('@opentelemetry/sdk-metrics').PeriodicExportingMetricReader)({
+              exporter,
+              exportIntervalMillis,
+            });
+            provider.addMetricReader(reader);
 
         const meter = provider.getMeter(meterName);
 
@@ -246,9 +269,28 @@ export class OpenTelemetryMetrics implements INodeType {
             await (provider as any).forceFlush?.();
             await provider.shutdown();
 
-        returnData.push({
-          json: {
-            status: 'ok',
+            const redactedHeaders = Object.fromEntries(Object.entries(headers).map(([k, v]) => [
+              k,
+              /authorization/i.test(k) ? 'REDACTED' : v,
+            ]));
+
+            const deliveryLog = includeLogs
+              ? {
+                  endpoint: host,
+                  method: 'POST',
+                  path: '/v1/metrics',
+                  headers: redactedHeaders,
+                  timeoutMillis: 10000,
+                  resultCode: (exporter.lastResult?.code ?? null),
+                  result: exporter.lastResult?.code === 0 ? 'SUCCESS' : 'UNKNOWN_OR_FAILED',
+                  error: exporter.lastResult?.error ?? null,
+                  durationMs: exporter.lastResult?.durationMs ?? null,
+                }
+              : undefined;
+
+            returnData.push({
+              json: {
+                status: 'ok',
                 endpoint: host,
                 serviceName,
                 meterName,
@@ -258,6 +300,7 @@ export class OpenTelemetryMetrics implements INodeType {
                 attributes: attrs,
                 resourceAttributes: resAttrs,
                 flushed: true,
+                deliveryLog,
               },
             });
       } catch (err) {
