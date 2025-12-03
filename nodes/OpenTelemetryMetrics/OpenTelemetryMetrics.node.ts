@@ -73,17 +73,20 @@ export class OpenTelemetryMetrics implements INodeType {
         type: 'string',
         default: 'n8n',
       },
-      {
-        displayName: 'Instrument Type',
-        name: 'instrumentType',
-        type: 'options',
-        default: 'counter',
-        options: [
-          { name: 'Counter', value: 'counter' },
-          { name: 'UpDownCounter', value: 'upDownCounter' },
-          { name: 'Histogram', value: 'histogram' },
-        ],
-      },
+          {
+            displayName: 'Instrument Type',
+            name: 'instrumentType',
+            type: 'options',
+            default: 'counter',
+            options: [
+              { name: 'Counter', value: 'counter' },
+              { name: 'UpDownCounter', value: 'upDownCounter' },
+              { name: 'Histogram', value: 'histogram' },
+              { name: 'ObservableGauge', value: 'observableGauge' },
+              { name: 'ObservableCounter', value: 'observableCounter' },
+              { name: 'ObservableUpDownCounter', value: 'observableUpDownCounter' },
+            ],
+          },
           {
             displayName: 'Instrument Name',
             name: 'instrumentName',
@@ -285,9 +288,30 @@ export class OpenTelemetryMetrics implements INodeType {
                 histogram.record(value, attrs);
                 break;
               }
+              case 'observableGauge': {
+                const inst = meter.createObservableGauge(finalInstrumentName);
+                inst.addCallback((observableResult: any) => {
+                  observableResult.observe(value, attrs);
+                });
+                break;
+              }
+              case 'observableCounter': {
+                const inst = meter.createObservableCounter(finalInstrumentName);
+                inst.addCallback((observableResult: any) => {
+                  observableResult.observe(value, attrs);
+                });
+                break;
+              }
+              case 'observableUpDownCounter': {
+                const inst = meter.createObservableUpDownCounter(finalInstrumentName);
+                inst.addCallback((observableResult: any) => {
+                  observableResult.observe(value, attrs);
+                });
+                break;
+              }
               default:
                 throw new NodeOperationError(this.getNode(), `Unsupported instrument type: ${instrumentType}`);
-        }
+            }
 
             await (provider as any).forceFlush?.();
             await provider.shutdown();
