@@ -1,6 +1,6 @@
 {
   "name": "@warnyin/n8n-nodes-opentelemetry-metrics",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "n8n community node for sending metrics via OpenTelemetry (OTLP)",
   "keywords": [
     "n8n-community-node-package",

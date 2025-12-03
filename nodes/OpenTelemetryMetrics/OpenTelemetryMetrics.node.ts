@@ -84,12 +84,26 @@ export class OpenTelemetryMetrics implements INodeType {
           { name: 'Histogram', value: 'histogram' },
         ],
       },
-      {
-        displayName: 'Instrument Name',
-        name: 'instrumentName',
-        type: 'string',
-        default: 'event_count',
-      },
+          {
+            displayName: 'Instrument Name',
+            name: 'instrumentName',
+            type: 'string',
+            default: 'event_count',
+          },
+          {
+            displayName: 'Metric Name Override',
+            name: 'metricNameOverride',
+            type: 'string',
+            default: '',
+            description: 'If set, use this as the metric name instead of Instrument Name',
+          },
+          {
+            displayName: 'Prefix Meter Name',
+            name: 'prefixMeterName',
+            type: 'boolean',
+            default: false,
+            description: 'Prepend meterName to the metric name (meterName.instrumentName)',
+          },
       {
         displayName: 'Value',
         name: 'value',
@@ -185,7 +199,9 @@ export class OpenTelemetryMetrics implements INodeType {
       const serviceName = this.getNodeParameter('serviceName', i) as string;
       const meterName = this.getNodeParameter('meterName', i) as string;
       const instrumentType = this.getNodeParameter('instrumentType', i) as string;
-      const instrumentName = this.getNodeParameter('instrumentName', i) as string;
+          const instrumentName = this.getNodeParameter('instrumentName', i) as string;
+          const metricNameOverride = (this.getNodeParameter('metricNameOverride', i) as string) || '';
+          const prefixMeterName = this.getNodeParameter('prefixMeterName', i) as boolean;
       const value = this.getNodeParameter('value', i) as number;
 
       const attrsCollection = this.getNodeParameter('attributes', i) as IDataObject;
@@ -246,22 +262,29 @@ export class OpenTelemetryMetrics implements INodeType {
 
         const meter = provider.getMeter(meterName);
 
-        switch (instrumentType) {
-          case 'counter': {
-            const counter = meter.createCounter(instrumentName);
-            counter.add(value, attrs);
-            break;
-          }
-          case 'upDownCounter': {
-            const upDownCounter = meter.createUpDownCounter(instrumentName);
-            upDownCounter.add(value, attrs);
-            break;
-          }
-          case 'histogram': {
-            const histogram = meter.createHistogram(instrumentName);
-            histogram.record(value, attrs);
-            break;
-          }
+            let finalInstrumentName = instrumentName;
+            if (metricNameOverride && metricNameOverride.trim()) {
+              finalInstrumentName = metricNameOverride.trim();
+            } else if (prefixMeterName) {
+              finalInstrumentName = `${meterName}.${instrumentName}`;
+            }
+
+            switch (instrumentType) {
+              case 'counter': {
+                const counter = meter.createCounter(finalInstrumentName);
+                counter.add(value, attrs);
+                break;
+              }
+              case 'upDownCounter': {
+                const upDownCounter = meter.createUpDownCounter(finalInstrumentName);
+                upDownCounter.add(value, attrs);
+                break;
+              }
+              case 'histogram': {
+                const histogram = meter.createHistogram(finalInstrumentName);
+                histogram.record(value, attrs);
+                break;
+              }
               default:
                 throw new NodeOperationError(this.getNode(), `Unsupported instrument type: ${instrumentType}`);
         }
@@ -296,6 +319,7 @@ export class OpenTelemetryMetrics implements INodeType {
                 meterName,
                 instrumentType,
                 instrumentName,
+                metricName: finalInstrumentName,
                 value,
                 attributes: attrs,
                 resourceAttributes: resAttrs,
